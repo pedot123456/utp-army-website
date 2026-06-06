@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Inter', sans-serif;
+}
+
+
+.gold-gradient {
+  background: linear-gradient(135deg, #c69c6d 0%, #e5c598 50%, #c69c6d 100%);
+}
+
+.text-gold {
+  color: #c69c6d;
+}
+
+.bg-corporate-blue {
+  background-color: #003865;
+}
+
+.hide-scroll::-webkit-scrollbar {
+  display: none;
+}
+.hide-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px -10px rgba(0, 56, 101, 0.1);
+}
+
+/* Constrain Instagram embeds inside event cards */
+.ig-embed-wrap .instagram-media {
+  min-width: unset !important;
+  width: 100% !important;
+}
+
+/*
+ * Leader card photo technique:
+ * The Instagram embed header is ~70 px tall.
+ * We apply margin-top: -70px on the inner wrapper so the header scrolls above
+ * the card boundary, and overflow:hidden on the outer card clips it away —
+ * leaving only the post image visible.
+ */
+.leader-ig-wrap .instagram-media,
+.leader-ig-wrap iframe {
+  min-width: unset !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}

@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+* { 
+    font-family: 'Inter', sans-serif; 
+}
+
+/* Corporate Color Palette */
+.gold-gradient { 
+    background: linear-gradient(135deg, #C69C6D 0%, #E5C598 50%, #C69C6D 100%); 
+}
+.text-gold { 
+    color: #C69C6D; 
+}
+.bg-corporate-blue { 
+    background-color: #003865; 
+}
+
+/* App-like utilities */
+.hide-scroll::-webkit-scrollbar { 
+    display: none; 
+}
+.hide-scroll { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+
+.hover-lift { 
+    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+}
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 30px -10px rgba(0,56,101,0.1);
+}
