@@ -4,7 +4,8 @@ import { EVENTS } from '../data/events'
 /* Loads (or re-processes) the official Instagram embed script */
 function useInstagramEmbeds() {
   useEffect(() => {
-    const process = () => window.instgrm?.Embeds?.process()
+    let cancelled = false
+    const process = () => { if (!cancelled) window.instgrm?.Embeds?.process() }
 
     if (document.querySelector('script[src*="instagram.com/embed"]')) {
       process()
@@ -15,6 +16,8 @@ function useInstagramEmbeds() {
       s.onload = process
       document.head.appendChild(s)
     }
+
+    return () => { cancelled = true }
   }, [])
 }
 

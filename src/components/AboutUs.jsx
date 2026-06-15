@@ -3,7 +3,9 @@ import { DEPARTMENTS } from '../data/departments'
 
 function useInstagramEmbeds() {
   useEffect(() => {
-    const process = () => window.instgrm?.Embeds?.process()
+    let cancelled = false
+    const process = () => { if (!cancelled) window.instgrm?.Embeds?.process() }
+
     if (document.querySelector('script[src*="instagram.com/embed"]')) {
       process()
     } else {
@@ -13,6 +15,8 @@ function useInstagramEmbeds() {
       s.onload = process
       document.head.appendChild(s)
     }
+
+    return () => { cancelled = true }
   }, [])
 }
 
@@ -105,18 +109,38 @@ export default function AboutUs() {
         </div>
       </div>
 
-      {/* ══ Vision & Mission ══ */}
+      {/* ══ Motto, Vision & Mission ══ */}
       <section className="bg-[#F4F6F8] py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-6">
 
           <div className="text-center mb-14">
             <h2 className="text-xl font-bold text-gray-700 tracking-widest uppercase">
-              Vision &amp; Mission
+              Motto, Vision &amp; Mission
             </h2>
             <div className="h-0.5 w-10 bg-[#C69C6D] mx-auto mt-3 rounded-full" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+
+            {/* Motto card — white with gold left border */}
+            <div className="bg-white rounded-2xl p-8 md:p-10 border-l-4 border-[#C69C6D] shadow-sm flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-[#C69C6D]/10 flex items-center justify-center shrink-0">
+                  <i className="fa-solid fa-quote-left text-[#C69C6D]" />
+                </div>
+                <span className="text-[#002B5B] font-black text-xs tracking-[0.25em] uppercase">
+                  Motto
+                </span>
+              </div>
+              <p className="text-[#002B5B] text-xl md:text-2xl font-light italic leading-snug mb-4">
+                &ldquo;Sharing is Rewarding&rdquo;
+              </p>
+              <p className="text-gray-600 leading-relaxed flex-grow">
+                Success is never a solo journey. We thrive by passing down knowledge, uplifting our
+                fellow students, and building a collaborative ecosystem where every shared idea sparks
+                a new opportunity.
+              </p>
+            </div>
 
             {/* Vision card — navy */}
             <div className="relative overflow-hidden rounded-2xl" style={{ background: '#002B5B' }}>
@@ -137,14 +161,14 @@ export default function AboutUs() {
                     Vision
                   </span>
                 </div>
-                <p className="text-white text-xl md:text-2xl font-light leading-relaxed flex-grow">
+                <p className="text-white text-lg md:text-xl font-light leading-relaxed flex-grow">
                   To be the premier youth-driven marketing platform at UTP, cultivating future-ready
                   ambassadors who champion excellence, creativity, and impactful engagement.
                 </p>
               </div>
             </div>
 
-            {/* Mission card — white */}
+            {/* Mission card — white with gold left border */}
             <div className="bg-white rounded-2xl p-8 md:p-10 border-l-4 border-[#C69C6D] shadow-sm flex flex-col">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-full bg-[#C69C6D]/10 flex items-center justify-center shrink-0">
