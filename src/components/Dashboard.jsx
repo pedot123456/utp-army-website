@@ -1,9 +1,36 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  collection, addDoc, getDocs, deleteDoc, doc,
-  serverTimestamp, query, orderBy,
+  collection, addDoc, getDocs, updateDoc, deleteDoc, doc,
+  serverTimestamp, query, orderBy, where,
 } from 'firebase/firestore'
 import { db } from '../firebase'
+
+/* ══════════════════════════════════════════════
+   TOAST SYSTEM
+══════════════════════════════════════════════ */
+function ToastContainer({ toasts }) {
+  if (!toasts.length) return null
+  return (
+    <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none">
+      {toasts.map(t => (
+        <div
+          key={t.id}
+          className="flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-semibold shadow-2xl pointer-events-auto"
+          style={{
+            background: t.type === 'error' ? 'rgba(30,10,10,0.97)' : 'rgba(10,28,18,0.97)',
+            border: `1px solid ${t.type === 'error' ? 'rgba(239,68,68,0.4)' : 'rgba(34,197,94,0.35)'}`,
+            backdropFilter: 'blur(12px)',
+            color: t.type === 'error' ? '#f87171' : '#86efac',
+            maxWidth: '360px',
+          }}
+        >
+          <i className={`fa-solid ${t.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'} shrink-0`} />
+          <span className="leading-snug">{t.message}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 /* ══════════════════════════════════════════════
    SHARED UI PRIMITIVES
@@ -26,19 +53,20 @@ const inputFocus = {
   background: 'rgba(255,255,255,0.07)',
 }
 
-function DarkInput({ type = 'text', value, onChange, placeholder, required = true, autoComplete }) {
+function DarkInput({ type = 'text', value, onChange, placeholder, required = true, autoComplete, readOnly }) {
   return (
     <input
       type={type}
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={e => onChange && onChange(e.target.value)}
       placeholder={placeholder}
       required={required}
       autoComplete={autoComplete}
+      readOnly={readOnly}
       className="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none transition-all"
-      style={inputBase}
-      onFocus={e => Object.assign(e.target.style, inputFocus)}
-      onBlur={e => Object.assign(e.target.style, inputBase)}
+      style={{ ...inputBase, ...(readOnly ? { opacity: 0.6, cursor: 'default' } : {}) }}
+      onFocus={e => { if (!readOnly) Object.assign(e.target.style, inputFocus) }}
+      onBlur={e => { if (!readOnly) Object.assign(e.target.style, inputBase) }}
     />
   )
 }
@@ -143,6 +171,7 @@ function CreateEventModal({ user, onClose, onCreated }) {
   const [endDate,     setEndDate]     = useState('')
   const [description, setDescription] = useState('')
   const [securityPin, setSecurityPin] = useState('')
+  const [status,      setStatus]      = useState('Upcoming')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
 
@@ -160,6 +189,7 @@ function CreateEventModal({ user, onClose, onCreated }) {
         startDate,
         endDate:       endDate || startDate,
         description,
+        status,
         deletionPin:   securityPin,
         createdBy:     user.uid,
         createdByName: user.displayName || user.email,
@@ -196,6 +226,11 @@ function CreateEventModal({ user, onClose, onCreated }) {
         <div>
           <FieldLabel>Description</FieldLabel>
           <DarkTextarea value={description} onChange={setDescription} placeholder="Brief description of the event, venue, requirements…" />
+        </div>
+
+        <div>
+          <FieldLabel>Event Status</FieldLabel>
+          <DarkSelect value={status} onChange={setStatus} options={['Upcoming', 'Ongoing', 'Completed']} placeholder="Select status" />
         </div>
 
         <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(198,156,109,0.06)', border: '1px solid rgba(198,156,109,0.2)' }}>
@@ -315,7 +350,7 @@ const DEPARTMENTS = [
   'Others',
 ]
 
-function RegisterModal({ event, user, onClose }) {
+function RegisterModal({ event, user, onClose, onRegistered, addToast }) {
   const [fullName,   setFullName]   = useState(user?.displayName || '')
   const [studentId,  setStudentId]  = useState('')
   const [email,      setEmail]      = useState(user?.email || '')
@@ -330,6 +365,21 @@ function RegisterModal({ event, user, onClose }) {
     setLoading(true)
     setError('')
     try {
+      // Safeguard: check for existing registration before inserting
+      if (user?.uid) {
+        const existing = await getDocs(
+          query(
+            collection(db, 'events', event.id, 'participants'),
+            where('userId', '==', user.uid)
+          )
+        )
+        if (!existing.empty) {
+          addToast('You have already registered for this event.', 'error')
+          setLoading(false)
+          return
+        }
+      }
+
       await addDoc(collection(db, 'events', event.id, 'participants'), {
         fullName,
         studentId,
@@ -339,6 +389,7 @@ function RegisterModal({ event, user, onClose }) {
         userId:       user?.uid ?? null,
         registeredAt: serverTimestamp(),
       })
+      onRegistered?.(event.id)
       setSuccess(true)
     } catch {
       setError('Registration failed. Please try again.')
@@ -543,6 +594,177 @@ function ParticipantsModal({ event, onClose }) {
 }
 
 /* ══════════════════════════════════════════════
+   DUTY LOG MODAL
+══════════════════════════════════════════════ */
+function calcDutyHours(start, end) {
+  if (!start || !end) return 0
+  const diff = (new Date(end) - new Date(start)) / (1000 * 60 * 60)
+  return Math.max(0, diff)
+}
+
+function DutyLogModal({ event, user, onClose, onLogged }) {
+  const [startTime, setStartTime] = useState('')
+  const [endTime,   setEndTime]   = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+  const [success,   setSuccess]   = useState(false)
+
+  const totalHours      = calcDutyHours(startTime, endTime)
+  const memberPay       = totalHours * 8
+  const clubContrib     = totalHours * 1
+  const totalInvoice    = totalHours * 9
+  const hasValidHours   = totalHours > 0
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!startTime || !endTime) {
+      setError('Please fill in both start and end times.')
+      return
+    }
+    if (new Date(endTime) <= new Date(startTime)) {
+      setError('End time must be after start time.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      await addDoc(collection(db, 'duty_logs'), {
+        userId:           user.uid,
+        userName:         user.displayName || user.email,
+        userEmail:        user.email,
+        eventId:          event.id,
+        eventName:        event.title,
+        startTime,
+        endTime,
+        totalHours,
+        memberPay,
+        clubContribution: clubContrib,
+        totalInvoice,
+        loggedAt:         serverTimestamp(),
+      })
+      onLogged?.(event.id)
+      setSuccess(true)
+    } catch {
+      setError('Failed to save duty log. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (success) {
+    return (
+      <Modal title="" onClose={onClose}>
+        <div className="text-center py-10">
+          <div className="w-[72px] h-[72px] rounded-full bg-[#C69C6D]/15 border border-[#C69C6D]/30 flex items-center justify-center mx-auto mb-5">
+            <i className="fa-solid fa-circle-check text-[#C69C6D] text-3xl" />
+          </div>
+          <h3 className="text-white font-black text-2xl mb-2">Record Saved</h3>
+          <p className="text-white/50 text-sm leading-relaxed max-w-xs mx-auto">
+            Your duty record has been saved.
+          </p>
+          <button
+            onClick={onClose}
+            className="mt-8 gold-gradient px-10 py-3 rounded-xl text-sm font-black hover:-translate-y-0.5 transition-all"
+            style={{ color: '#1a0e00' }}
+          >
+            OK
+          </button>
+        </div>
+      </Modal>
+    )
+  }
+
+  return (
+    <Modal title="Log Duty Hours" subtitle={event.title} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+
+        {/* Event Name — read-only */}
+        <div>
+          <FieldLabel>Event Name</FieldLabel>
+          <DarkInput value={event.title} onChange={() => {}} readOnly required={false} />
+        </div>
+
+        {/* Time inputs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <FieldLabel>Duty Start Time</FieldLabel>
+            <DarkInput type="datetime-local" value={startTime} onChange={setStartTime} />
+          </div>
+          <div>
+            <FieldLabel>Duty End Time</FieldLabel>
+            <DarkInput type="datetime-local" value={endTime} onChange={setEndTime} />
+          </div>
+        </div>
+
+        {/* Real-time pay summary */}
+        <div
+          className="rounded-xl p-4 space-y-2.5 transition-all"
+          style={{
+            background: hasValidHours ? 'rgba(198,156,109,0.07)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${hasValidHours ? 'rgba(198,156,109,0.25)' : 'rgba(255,255,255,0.08)'}`,
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <i className={`fa-solid fa-calculator text-xs ${hasValidHours ? 'text-[#C69C6D]' : 'text-white/20'}`} />
+            <span className={`text-[11px] font-black tracking-widest uppercase ${hasValidHours ? 'text-[#C69C6D]' : 'text-white/20'}`}>
+              Pay Summary
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-white/45">Total Hours</span>
+            <span className={`font-bold tabular-nums ${hasValidHours ? 'text-white' : 'text-white/20'}`}>
+              {hasValidHours ? `${totalHours.toFixed(2)} hrs` : '—'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-white/45">Your Pay <span className="text-white/25 text-xs">(RM 8/hr)</span></span>
+            <span className={`font-bold tabular-nums ${hasValidHours ? 'text-emerald-400' : 'text-white/20'}`}>
+              {hasValidHours ? `RM ${memberPay.toFixed(2)}` : '—'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-white/45">Club Contribution <span className="text-white/25 text-xs">(RM 1/hr)</span></span>
+            <span className={`font-bold tabular-nums ${hasValidHours ? 'text-white/65' : 'text-white/20'}`}>
+              {hasValidHours ? `RM ${clubContrib.toFixed(2)}` : '—'}
+            </span>
+          </div>
+
+          <div
+            className="flex justify-between items-center text-sm pt-2.5 mt-1"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
+          >
+            <span className={`font-bold ${hasValidHours ? 'text-white' : 'text-white/25'}`}>Total Invoice Amount</span>
+            <span className={`font-black text-base tabular-nums ${hasValidHours ? 'text-[#C69C6D]' : 'text-white/20'}`}>
+              {hasValidHours ? `RM ${totalInvoice.toFixed(2)}` : '—'}
+            </span>
+          </div>
+        </div>
+
+        <ErrorBanner msg={error} />
+
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button" onClick={onClose}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold text-white/50 hover:text-white border border-white/10 hover:border-white/20 transition"
+          >
+            Cancel
+          </button>
+          <GoldButton
+            loading={loading}
+            loadingLabel="Saving…"
+            label={<><i className="fa-solid fa-floppy-disk mr-1.5" />Submit Duty Log</>}
+            disabled={!hasValidHours}
+          />
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+/* ══════════════════════════════════════════════
    EVENT CARD
 ══════════════════════════════════════════════ */
 function fmtDate(iso) {
@@ -552,10 +774,61 @@ function fmtDate(iso) {
   })
 }
 
-function EventCard({ event, isPast, onRegister, onViewParticipants, onDelete }) {
+const STATUS_BADGE = {
+  Upcoming:  { bg: 'rgba(147,197,253,0.12)', border: 'rgba(147,197,253,0.3)', color: '#93c5fd' },
+  Ongoing:   { bg: 'rgba(34,197,94,0.12)',   border: 'rgba(34,197,94,0.3)',   color: '#4ade80' },
+  Completed: { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.35)' },
+}
+
+function EventCard({ event, isPast, isRegistered, isDutySubmitted, user, onRegister, onLogDuty, onViewParticipants, onDelete, onUpdateStatus }) {
+  const [downloading, setDownloading] = useState(false)
+
   const start     = event.startDate || event.date || null
   const end       = event.endDate   || null
   const isSameDay = start && end && start === end
+  const isCreator = user?.uid && user.uid === event.createdBy
+
+  const downloadDutyCSV = async () => {
+    setDownloading(true)
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'duty_logs'), where('eventId', '==', event.id))
+      )
+      const logs = snap.docs.map(d => d.data())
+      const esc  = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+      const fmtT = (s) => s
+        ? new Date(s).toLocaleString('en-MY', { dateStyle: 'short', timeStyle: 'short' })
+        : 'N/A'
+
+      const headers = [
+        'Member Name', 'Start Time', 'End Time',
+        'Total Hours', 'Member Pay (RM)', 'Club Contribution (RM)', 'Total Invoice Amount (RM)',
+      ]
+      const rows = logs.map(l => [
+        esc(l.userName || l.userId || 'Unknown'),
+        esc(fmtT(l.startTime)),
+        esc(fmtT(l.endTime)),
+        (l.totalHours      || 0).toFixed(2),
+        (l.memberPay       || 0).toFixed(2),
+        (l.clubContribution|| 0).toFixed(2),
+        (l.totalInvoice    || 0).toFixed(2),
+      ].join(','))
+
+      const csv  = [headers.map(esc).join(','), ...rows].join('\r\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url  = URL.createObjectURL(blob)
+      const safe = event.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_')
+      const a    = Object.assign(document.createElement('a'), {
+        href: url, download: `${safe}_Duty_Logs.csv`,
+      })
+      document.body.appendChild(a); a.click(); document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('downloadDutyCSV:', err)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div
@@ -579,15 +852,43 @@ function EventCard({ event, isPast, onRegister, onViewParticipants, onDelete }) 
       <div className="p-6 flex flex-col flex-grow">
         <div className="flex items-start gap-3 mb-3">
           <h3 className="text-white font-black text-lg leading-tight flex-grow">{event.title}</h3>
-          {isPast ? (
+          {isCreator ? (
+            /* Creator sees a status select to change it inline */
+            <div className="relative shrink-0">
+              <select
+                value={event.status || 'Upcoming'}
+                onChange={e => onUpdateStatus?.(event.id, e.target.value)}
+                onClick={e => e.stopPropagation()}
+                className="appearance-none rounded-md pl-2 pr-6 py-1 text-[9px] font-black tracking-widest uppercase focus:outline-none cursor-pointer transition-all"
+                style={(() => {
+                  const s = STATUS_BADGE[event.status] || STATUS_BADGE.Upcoming
+                  return { background: s.bg, border: `1px solid ${s.border}`, color: s.color }
+                })()}
+              >
+                <option value="Upcoming"  style={{ background: '#0A1628', color: 'white' }}>Upcoming</option>
+                <option value="Ongoing"   style={{ background: '#0A1628', color: 'white' }}>Ongoing</option>
+                <option value="Completed" style={{ background: '#0A1628', color: 'white' }}>Completed</option>
+              </select>
+              <i className="fa-solid fa-chevron-down text-[7px] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
+                style={{ color: (STATUS_BADGE[event.status] || STATUS_BADGE.Upcoming).color }} />
+            </div>
+          ) : isPast ? (
             <span className="shrink-0 px-2 py-1 rounded-md text-[9px] font-black tracking-widest uppercase bg-white/8 text-white/35 border border-white/10">
-              Past
+              Completed
             </span>
-          ) : (
-            <span className="shrink-0 px-2 py-1 rounded-md text-[9px] font-black tracking-widest uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-              Active
+          ) : isRegistered ? (
+            <span className="shrink-0 px-2 py-1 rounded-md text-[9px] font-black tracking-widest uppercase bg-[#C69C6D]/15 text-[#C69C6D] border border-[#C69C6D]/25">
+              Registered
             </span>
-          )}
+          ) : (() => {
+            const st = STATUS_BADGE[event.status] || STATUS_BADGE.Upcoming
+            return (
+              <span className="shrink-0 px-2 py-1 rounded-md text-[9px] font-black tracking-widest uppercase"
+                style={{ background: st.bg, border: `1px solid ${st.border}`, color: st.color }}>
+                {event.status || 'Upcoming'}
+              </span>
+            )
+          })()}
         </div>
 
         {start ? (
@@ -624,6 +925,7 @@ function EventCard({ event, isPast, onRegister, onViewParticipants, onDelete }) 
           <span>Created by <span className="text-white/45">{event.createdByName}</span></span>
         </div>
 
+        {/* Action buttons */}
         <div className="flex gap-2 flex-wrap">
           {isPast ? (
             <button
@@ -637,6 +939,19 @@ function EventCard({ event, isPast, onRegister, onViewParticipants, onDelete }) 
             >
               <i className="fa-solid fa-lock" />
               Closed
+            </button>
+          ) : isRegistered ? (
+            <button
+              disabled
+              className="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 min-w-[90px] cursor-not-allowed"
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.3)',
+              }}
+            >
+              <i className="fa-solid fa-check" />
+              Registered
             </button>
           ) : (
             <button
@@ -657,6 +972,26 @@ function EventCard({ event, isPast, onRegister, onViewParticipants, onDelete }) 
             <span className="hidden sm:inline">Participants</span>
           </button>
 
+          {/* Duty Logs CSV — only visible to the event creator */}
+          {isCreator && (
+            <button
+              onClick={downloadDutyCSV}
+              disabled={downloading}
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 disabled:hover:translate-y-0"
+              style={{
+                background: 'rgba(198,156,109,0.08)',
+                borderColor: 'rgba(198,156,109,0.3)',
+                color: '#C69C6D',
+              }}
+              title="Download duty logs for this event"
+            >
+              {downloading
+                ? <i className="fa-solid fa-circle-notch fa-spin text-[11px]" />
+                : <i className="fa-solid fa-file-csv text-[11px]" />}
+              <span className="hidden sm:inline">Duty Logs</span>
+            </button>
+          )}
+
           <button
             onClick={() => onDelete(event)}
             className="px-3 py-2.5 rounded-xl text-xs font-bold text-white/30 hover:text-red-400 border border-white/8 hover:border-red-500/30 hover:bg-red-500/8 transition-all flex items-center gap-1"
@@ -665,6 +1000,37 @@ function EventCard({ event, isPast, onRegister, onViewParticipants, onDelete }) 
             <i className="fa-solid fa-trash text-[11px]" />
           </button>
         </div>
+
+        {/* Bottom duty button — only for registered, active events */}
+        {!isPast && isRegistered && (
+          isDutySubmitted ? (
+            <button
+              disabled
+              className="mt-2 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 cursor-not-allowed"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.3)',
+              }}
+            >
+              <i className="fa-solid fa-circle-check" />
+              Duty Submitted
+            </button>
+          ) : (
+            <button
+              onClick={() => onLogDuty(event)}
+              className="mt-2 w-full py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-all duration-200"
+              style={{
+                background: 'linear-gradient(135deg,#002B5B,#0D3A6E)',
+                border: '1px solid rgba(198,156,109,0.35)',
+                color: '#C69C6D',
+              }}
+            >
+              <i className="fa-solid fa-clock" />
+              Log Duty Hours
+            </button>
+          )
+        )}
       </div>
     </div>
   )
@@ -675,40 +1041,104 @@ function EventCard({ event, isPast, onRegister, onViewParticipants, onDelete }) 
 ══════════════════════════════════════════════ */
 const todayISO = () => new Date().toISOString().split('T')[0]
 
+// Events with a `status` field use it as source of truth.
+// Legacy events (no status) fall back to date comparison.
+function isEventCompleted(ev) {
+  if (ev.status) return ev.status === 'Completed'
+  const end = ev.endDate || ev.startDate || ev.date || null
+  return end ? end < todayISO() : false
+}
+
 export default function Dashboard({ user }) {
   const [events,            setEvents]            = useState([])
+  const [registeredIds,     setRegisteredIds]     = useState(new Set())
+  const [dutySubmittedIds,  setDutySubmittedIds]  = useState(new Set())
   const [loading,           setLoading]           = useState(true)
   const [tab,               setTab]               = useState('upcoming')
   const [showCreate,        setShowCreate]        = useState(false)
   const [registerEvent,     setRegisterEvent]     = useState(null)
+  const [dutyLogEvent,      setDutyLogEvent]      = useState(null)
   const [participantsEvent, setParticipantsEvent] = useState(null)
   const [deleteEvent,       setDeleteEvent]       = useState(null)
+  const [toasts,            setToasts]            = useState([])
+
+  const toastTimers = useRef({})
+
+  const addToast = useCallback((message, type = 'success') => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
+    toastTimers.current[id] = setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+      delete toastTimers.current[id]
+    }, 4500)
+  }, [])
 
   const fetchEvents = useCallback(async () => {
     setLoading(true)
     try {
       const q    = query(collection(db, 'events'), orderBy('createdAt', 'desc'))
       const snap = await getDocs(q)
-      setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      const eventsData = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setEvents(eventsData)
+
+      // In parallel: check registrations AND duty log submissions for this user
+      if (user?.uid && eventsData.length > 0) {
+        const [participantChecks, dutyChecks] = await Promise.all([
+          Promise.all(
+            eventsData.map(ev =>
+              getDocs(query(collection(db, 'events', ev.id, 'participants'), where('userId', '==', user.uid)))
+            )
+          ),
+          Promise.all(
+            eventsData.map(ev =>
+              getDocs(query(collection(db, 'duty_logs'), where('userId', '==', user.uid), where('eventId', '==', ev.id)))
+            )
+          ),
+        ])
+        const regIds  = new Set()
+        const dutyIds = new Set()
+        eventsData.forEach((ev, i) => {
+          if (!participantChecks[i].empty) regIds.add(ev.id)
+          if (!dutyChecks[i].empty)        dutyIds.add(ev.id)
+        })
+        setRegisteredIds(regIds)
+        setDutySubmittedIds(dutyIds)
+      }
     } catch (err) {
       console.error('fetchEvents:', err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { fetchEvents() }, [fetchEvents])
 
-  const today    = todayISO()
-  const upcoming = events.filter(ev => {
-    const end = ev.endDate || ev.startDate || ev.date || null
-    return !end || end >= today
-  })
-  const past = events.filter(ev => {
-    const end = ev.endDate || ev.startDate || ev.date || null
-    return end && end < today
-  })
-  const visible = tab === 'upcoming' ? upcoming : past
+  // Clean up toast timers on unmount
+  useEffect(() => {
+    const timers = toastTimers.current
+    return () => Object.values(timers).forEach(clearTimeout)
+  }, [])
+
+  const handleRegistered = useCallback((eventId) => {
+    setRegisteredIds(prev => new Set([...prev, eventId]))
+  }, [])
+
+  const handleDutyLogged = useCallback((eventId) => {
+    setDutySubmittedIds(prev => new Set([...prev, eventId]))
+  }, [])
+
+  const handleUpdateStatus = useCallback(async (eventId, newStatus) => {
+    try {
+      await updateDoc(doc(db, 'events', eventId), { status: newStatus })
+      setEvents(prev => prev.map(ev => ev.id === eventId ? { ...ev, status: newStatus } : ev))
+    } catch (err) {
+      console.error('handleUpdateStatus:', err)
+    }
+  }, [])
+
+  const upcoming = events.filter(ev => !isEventCompleted(ev))
+  const past     = events.filter(ev =>  isEventCompleted(ev))
+  const visible  = tab === 'upcoming' ? upcoming : past
 
   const firstName = user?.displayName?.split(' ')[0] || 'Member'
 
@@ -837,10 +1267,15 @@ export default function Dashboard({ user }) {
               <EventCard
                 key={ev.id}
                 event={ev}
-                isPast={tab === 'past'}
+                isPast={isEventCompleted(ev)}
+                isRegistered={registeredIds.has(ev.id)}
+                isDutySubmitted={dutySubmittedIds.has(ev.id)}
+                user={user}
                 onRegister={setRegisterEvent}
+                onLogDuty={setDutyLogEvent}
                 onViewParticipants={setParticipantsEvent}
                 onDelete={setDeleteEvent}
+                onUpdateStatus={handleUpdateStatus}
               />
             ))}
           </div>
@@ -860,6 +1295,16 @@ export default function Dashboard({ user }) {
           event={registerEvent}
           user={user}
           onClose={() => setRegisterEvent(null)}
+          onRegistered={handleRegistered}
+          addToast={addToast}
+        />
+      )}
+      {dutyLogEvent && (
+        <DutyLogModal
+          event={dutyLogEvent}
+          user={user}
+          onClose={() => setDutyLogEvent(null)}
+          onLogged={handleDutyLogged}
         />
       )}
       {participantsEvent && (
@@ -887,6 +1332,9 @@ export default function Dashboard({ user }) {
           onClose={() => setDeleteEvent(null)}
         />
       )}
+
+      {/* ── Toast notifications ── */}
+      <ToastContainer toasts={toasts} />
     </div>
   )
 }

@@ -38,7 +38,7 @@ export default function Header({ onNavigate, currentPage, user, onLogout }) {
               onClick={go('dashboard')}
               className={`hover:text-white transition-colors ${currentPage === 'dashboard' ? 'text-[#C69C6D]' : ''}`}
             >
-              Dashboard
+              Events
             </button>
           )}
           <button
@@ -47,13 +47,15 @@ export default function Header({ onNavigate, currentPage, user, onLogout }) {
           >
             About Us
           </button>
-          <a
-            href={currentPage === 'home' ? '#events' : undefined}
-            onClick={currentPage !== 'home' ? go('events') : undefined}
-            className="hover:text-white transition-colors"
-          >
-            Events
-          </a>
+          {!user && (
+            <a
+              href={currentPage === 'home' ? '#events' : undefined}
+              onClick={currentPage !== 'home' ? go('events') : undefined}
+              className="hover:text-white transition-colors"
+            >
+              Events
+            </a>
+          )}
           <a
             href={currentPage === 'home' ? '#leadership' : undefined}
             onClick={currentPage !== 'home' ? go('leadership') : undefined}
@@ -61,12 +63,14 @@ export default function Header({ onNavigate, currentPage, user, onLogout }) {
           >
             Leadership
           </a>
-          <button
-            onClick={go('hicom')}
-            className={`hover:text-white transition-colors ${currentPage === 'hicom' ? 'text-[#C69C6D]' : ''}`}
-          >
-            Admin
-          </button>
+          {user && (
+            <button
+              onClick={go('hicom')}
+              className={`hover:text-white transition-colors ${currentPage === 'hicom' ? 'text-[#C69C6D]' : ''}`}
+            >
+              Admin
+            </button>
+          )}
         </div>
 
         {/* Hamburger — mobile only */}
@@ -151,7 +155,7 @@ export default function Header({ onNavigate, currentPage, user, onLogout }) {
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                Dashboard
+                Events
               </button>
             )}
             <button
@@ -164,13 +168,15 @@ export default function Header({ onNavigate, currentPage, user, onLogout }) {
             >
               About Us
             </button>
-            <a
-              href={currentPage === 'home' ? '#events' : undefined}
-              onClick={currentPage !== 'home' ? go('events') : () => setMenuOpen(false)}
-              className="w-full text-left px-4 py-3 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
-            >
-              Events
-            </a>
+            {!user && (
+              <a
+                href={currentPage === 'home' ? '#events' : undefined}
+                onClick={currentPage !== 'home' ? go('events') : () => setMenuOpen(false)}
+                className="w-full text-left px-4 py-3 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                Events
+              </a>
+            )}
             <a
               href={currentPage === 'home' ? '#leadership' : undefined}
               onClick={currentPage !== 'home' ? go('leadership') : () => setMenuOpen(false)}
@@ -178,16 +184,18 @@ export default function Header({ onNavigate, currentPage, user, onLogout }) {
             >
               Leadership
             </a>
-            <button
-              onClick={go('hicom')}
-              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                currentPage === 'hicom'
-                  ? 'bg-[#C69C6D]/20 text-[#C69C6D]'
-                  : 'text-white/80 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              Admin
-            </button>
+            {user && (
+              <button
+                onClick={go('hicom')}
+                className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === 'hicom'
+                    ? 'bg-[#C69C6D]/20 text-[#C69C6D]'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Admin
+              </button>
+            )}
 
             {/* Divider */}
             <div className="my-2 border-t border-white/10" />
