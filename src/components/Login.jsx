@@ -129,7 +129,7 @@ export default function Login({ onSuccess }) {
 
           {/* Card header */}
           <div
-            className="px-8 pt-8 pb-6 text-center"
+            className="px-5 sm:px-8 pt-7 sm:pt-8 pb-5 sm:pb-6 text-center"
             style={{ background: 'linear-gradient(135deg, #002B5B 0%, #0D3A6E 100%)' }}
           >
             <img
@@ -146,7 +146,7 @@ export default function Login({ onSuccess }) {
 
           {/* Tab toggle — hidden in forgot mode */}
           {mode === 'forgot' ? (
-            <div className="flex items-center gap-3 px-8 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-3 px-5 sm:px-8 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               <button
                 type="button"
                 onClick={() => switchMode('login')}
@@ -185,7 +185,7 @@ export default function Login({ onSuccess }) {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-7 space-y-5">
+          <form onSubmit={handleSubmit} className="px-5 sm:px-8 py-6 sm:py-7 space-y-5">
 
             {/* ── Forgot password mode ── */}
             {mode === 'forgot' ? (

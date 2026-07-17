@@ -134,7 +134,7 @@ function ErrorBanner({ msg }) {
 function Modal({ title, subtitle, onClose, children, maxWidth = 'max-w-lg' }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(5px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
@@ -143,7 +143,7 @@ function Modal({ title, subtitle, onClose, children, maxWidth = 'max-w-lg' }) {
         style={{ background: '#0A1628', boxShadow: '0 32px 72px rgba(0,0,0,0.65)' }}
       >
         {title && (
-          <div className="flex items-start justify-between px-6 py-5 border-b border-white/8 gap-4">
+          <div className="flex items-start justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-white/8 gap-4">
             <div>
               <h2 className="text-white font-black text-lg leading-snug">{title}</h2>
               {subtitle && <p className="text-white/35 text-xs mt-0.5">{subtitle}</p>}
@@ -156,7 +156,7 @@ function Modal({ title, subtitle, onClose, children, maxWidth = 'max-w-lg' }) {
             </button>
           </div>
         )}
-        <div className="px-6 py-6">{children}</div>
+        <div className="px-4 sm:px-6 py-5 sm:py-6">{children}</div>
       </div>
     </div>
   )
@@ -211,7 +211,7 @@ function CreateEventModal({ user, onClose, onCreated }) {
           <DarkInput value={title} onChange={setTitle} placeholder="e.g. ARMy Networking Night 2026" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <FieldLabel>Start Date</FieldLabel>
             <DarkInput type="date" value={startDate} onChange={setStartDate} />
@@ -1163,7 +1163,7 @@ export default function Dashboard({ user }) {
           className="absolute right-0 top-0 h-full w-1/3 opacity-10"
           style={{ background: 'radial-gradient(ellipse at 100% 50%, #C69C6D 0%, transparent 70%)' }}
         />
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div>
             <p className="text-[#C69C6D] text-[10px] font-black tracking-[0.25em] uppercase mb-1.5">
               Member Dashboard
@@ -1184,7 +1184,7 @@ export default function Dashboard({ user }) {
       </div>
 
       {/* ── Events feed ── */}
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
 
         {/* Tab bar + refresh */}
         <div className="flex items-center gap-4 mb-8 flex-wrap">

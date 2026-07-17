@@ -112,15 +112,15 @@ export default function App() {
               }}
             >
               <div className="flex items-center justify-center" style={{ minHeight: '46vh' }}>
-                <div className="text-center px-6 py-20 max-w-3xl mx-auto">
+                <div className="text-center px-4 sm:px-6 py-12 sm:py-20 max-w-3xl mx-auto">
                   <div
-                    className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.25em]"
+                    className="inline-flex items-center gap-2 mb-6 sm:mb-8 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.25em]"
                     style={{ background: 'rgba(198,156,109,0.12)', border: '1px solid rgba(198,156,109,0.3)', color: '#C69C6D' }}
                   >
                     <i className="fa-solid fa-quote-left text-[9px]" /> ARMy Motto
                   </div>
                   <blockquote
-                    className="text-4xl md:text-6xl font-black leading-tight mb-6"
+                    className="text-3xl sm:text-4xl md:text-6xl font-black leading-tight mb-6"
                     style={{
                       background: 'linear-gradient(90deg, #C69C6D 0%, #E5C598 50%, #C69C6D 100%)',
                       WebkitBackgroundClip: 'text',
@@ -155,14 +155,14 @@ export default function App() {
               }}
             >
               <div className="flex items-center justify-center" style={{ minHeight: '40vh' }}>
-                <div className="text-center px-6 py-16 max-w-2xl mx-auto">
+                <div className="text-center px-4 sm:px-6 py-10 sm:py-16 max-w-2xl mx-auto">
                   <p
                     className="text-[10px] font-black uppercase tracking-[0.3em] mb-4"
                     style={{ color: '#C69C6D' }}
                   >
                     <i className="fa-brands fa-instagram mr-2" />Instagram
                   </p>
-                  <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+                  <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
                     Explore Our Events
                   </h2>
                   <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(219,234,254,0.60)' }}>

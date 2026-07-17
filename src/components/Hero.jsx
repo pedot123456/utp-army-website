@@ -65,7 +65,7 @@ export default function Hero() {
 
       {/* ── Foreground content (scrolls at 1× — full speed) ──────────────── */}
       <div
-        className="relative z-10 max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 md:gap-20"
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center gap-10 md:gap-20"
         style={{
           minHeight: 'calc(100vh - 73px)',
           paddingTop: '3rem',
@@ -132,7 +132,7 @@ export default function Hero() {
 
           {/* Stats strip */}
           <div
-            className="flex gap-8 pt-4 mt-4"
+            className="flex flex-wrap gap-6 sm:gap-8 pt-4 mt-4"
             style={{ borderTop: '1px solid rgba(255,255,255,0.10)' }}
           >
             {[

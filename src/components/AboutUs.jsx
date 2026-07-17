@@ -97,7 +97,7 @@ export default function AboutUs() {
           backgroundSize: '28px 28px, 100% 100%',
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-20 md:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20 md:py-28">
           <div className="h-1 w-14 rounded-full mb-6" style={{ background: '#C69C6D' }} />
           <h1 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tight">
             About<br />Us
@@ -110,7 +110,7 @@ export default function AboutUs() {
 
       {/* ══ Motto, Vision & Mission ══ */}
       <section className="bg-[#F4F6F8] py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
           <div className="text-center mb-14">
             <h2 className="text-xl font-bold text-gray-700 tracking-widest uppercase">
@@ -206,14 +206,14 @@ export default function AboutUs() {
         }}
       >
         <div className="flex items-center justify-center" style={{ minHeight: '36vh' }}>
-          <div className="text-center px-6 py-14 max-w-2xl mx-auto">
+          <div className="text-center px-4 sm:px-6 py-10 sm:py-14 max-w-2xl mx-auto">
             <div
-              className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.25em]"
+              className="inline-flex items-center gap-2 mb-5 sm:mb-6 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.25em]"
               style={{ background: 'rgba(198,156,109,0.12)', border: '1px solid rgba(198,156,109,0.3)', color: '#C69C6D' }}
             >
               <i className="fa-solid fa-users text-[9px]" /> Our People
             </div>
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
               Meet the Team Behind ARMy
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(219,234,254,0.62)' }}>
@@ -226,7 +226,7 @@ export default function AboutUs() {
 
       {/* ══ Our Exco ══ */}
       <section className="bg-[#080F1E] py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
           <div className="text-center mb-14">
             <p className="text-[#C69C6D] font-bold text-xs tracking-widest uppercase mb-2">

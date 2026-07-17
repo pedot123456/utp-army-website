@@ -168,7 +168,7 @@ export default function Leaders() {
           className="absolute right-0 top-0 h-full w-1/3 opacity-10"
           style={{ background: 'radial-gradient(ellipse at 100% 50%, #C69C6D 0%, transparent 70%)' }}
         />
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 md:py-28">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20 md:py-28">
           <div className="h-1 w-14 bg-[#C69C6D] mb-6 rounded-full" />
           <h1 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tight">
             Our<br />Leaders
@@ -181,7 +181,7 @@ export default function Leaders() {
 
       {/* ══ Cards section ══ */}
       <section className="bg-[#F4F6F8] py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
           <div className="text-center mb-14">
             <h2 className="text-xl font-bold text-gray-700 tracking-widest uppercase">

@@ -533,7 +533,7 @@ export default function HicomDashboard() {
         <div aria-hidden="true" className="absolute right-0 top-0 h-full w-1/3 opacity-10"
           style={{ background: 'radial-gradient(ellipse at 100% 50%, #C69C6D 0%, transparent 70%)' }} />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <i className="fa-solid fa-shield-halved text-[#C69C6D] text-xs" />
@@ -556,14 +556,15 @@ export default function HicomDashboard() {
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(198,156,109,0.35)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               style={{ background: 'linear-gradient(135deg,#002B5B,#0D3A6E)', border: '1px solid rgba(198,156,109,0.4)', color: '#C69C6D' }}>
               <i className="fa-solid fa-file-csv" />
-              Download Master Report (CSV)
+              <span className="hidden sm:inline">Download Master Report (CSV)</span>
+              <span className="sm:hidden">Export CSV</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* ── Body ── */}
-      <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
 
         {!loading && <SummaryTiles logs={filtered} />}
 
