@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { DEPARTMENTS } from '../data/departments'
+import { ParallaxBand } from './Parallax'
 
 function useInstagramEmbeds() {
   useEffect(() => {
@@ -83,31 +84,29 @@ export default function AboutUs() {
   return (
     <div>
 
-      {/* ══ Dark-blue hero banner ══ */}
-      <div className="relative overflow-hidden" style={{ background: '#002B5B' }}>
-        <div
-          aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(198,156,109,0.15) 1.5px, transparent 1.5px)',
-            backgroundSize: '28px 28px',
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="absolute right-0 top-0 h-full w-1/3 opacity-10"
-          style={{ background: 'radial-gradient(ellipse at 100% 50%, #C69C6D 0%, transparent 70%)' }}
-        />
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 md:py-28">
-          <div className="h-1 w-14 bg-[#C69C6D] mb-6 rounded-full" />
+      {/* ══ Parallax hero banner ══ */}
+      <ParallaxBand
+        minHeight="40vh"
+        speed={0.30}
+        overlay="rgba(0,10,30,0.48)"
+        bgStyle={{
+          background: 'linear-gradient(145deg, #002B5B 0%, #0D3A6E 45%, #071829 100%)',
+          backgroundImage:
+            'radial-gradient(circle, rgba(198,156,109,0.15) 1.5px, transparent 1.5px), ' +
+            'radial-gradient(ellipse at 95% 50%, rgba(198,156,109,0.12) 0%, transparent 65%)',
+          backgroundSize: '28px 28px, 100% 100%',
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-6 py-20 md:py-28">
+          <div className="h-1 w-14 rounded-full mb-6" style={{ background: '#C69C6D' }} />
           <h1 className="text-5xl md:text-7xl font-black text-white leading-none tracking-tight">
             About<br />Us
           </h1>
-          <p className="mt-5 text-[#C69C6D] text-xs font-bold tracking-[0.2em] uppercase">
+          <p className="mt-5 text-xs font-bold tracking-[0.2em] uppercase" style={{ color: '#C69C6D' }}>
             ARMy — Ambassador of Marketing Youth &nbsp;·&nbsp; UTP
           </p>
         </div>
-      </div>
+      </ParallaxBand>
 
       {/* ══ Motto, Vision & Mission ══ */}
       <section className="bg-[#F4F6F8] py-16 md:py-20">
@@ -193,6 +192,37 @@ export default function AboutUs() {
           </div>
         </div>
       </section>
+
+      {/* ══ Parallax divider between sections ══ */}
+      <ParallaxBand
+        minHeight="36vh"
+        speed={0.26}
+        overlay="rgba(2,8,22,0.62)"
+        bgStyle={{
+          background: 'linear-gradient(200deg, #080F1E 0%, #002B5B 50%, #071829 100%)',
+          backgroundImage:
+            'radial-gradient(circle, rgba(198,156,109,0.11) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      >
+        <div className="flex items-center justify-center" style={{ minHeight: '36vh' }}>
+          <div className="text-center px-6 py-14 max-w-2xl mx-auto">
+            <div
+              className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.25em]"
+              style={{ background: 'rgba(198,156,109,0.12)', border: '1px solid rgba(198,156,109,0.3)', color: '#C69C6D' }}
+            >
+              <i className="fa-solid fa-users text-[9px]" /> Our People
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+              Meet the Team Behind ARMy
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'rgba(219,234,254,0.62)' }}>
+              From our faculty advisors to our executive board, every member plays a vital
+              role in shaping the ARMy experience at UTP.
+            </p>
+          </div>
+        </div>
+      </ParallaxBand>
 
       {/* ══ Our Exco ══ */}
       <section className="bg-[#080F1E] py-16 md:py-20">
