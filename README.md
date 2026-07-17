@@ -34,12 +34,26 @@ This portal streamlines event management and duty tracking for the High Committe
 - **Creator Duty Export (CSV)** — Event creators get a per-event "Duty Logs (CSV)" button to download all member duty records for that event.
 
 ### 🛡️ HICOM Admin Portal — Duty Tracker
-- **Master Duty Logs Table** — Full-width table listing all duty records across all events, sortable by submission date.
+- **Master Duty Logs Table** — Full-width table listing all duty records across all events, sortable by submission date. Horizontally scrollable on mobile.
 - **Summary Tiles** — Five live stat cards: Total Records, Total Hours, Member Earnings, Club Collection, Total Invoice.
 - **Event Filter** — Filter the table and stats by a specific event name.
 - **Verification System** — Approve ✓ or Reject ✗ each duty record. Status is persisted to Firestore and reflected in row background colour (green / red / neutral).
 - **Payment Status Tracking** — Per-row dropdown: **Pending Client Payment** → **Ready to Pay** → **Paid to Member**. Persisted to Firestore immediately on change.
 - **Master CSV Export** — Downloads all visible records (respects active event filter) with columns: Member Name, Email, Event, Start/End Time, Hours, Pay, Club Contribution, Invoice Total, Verification, Payment Status.
+
+### 🎨 Parallax Scrolling (Public Pages)
+- **HeroParallax** — Full-viewport hero with four depth layers (gradient sky at 0.32×, gold ambient blobs at 0.20×, ARMy logo at 0.10×, foreground text at 1×) using a pure JS + `requestAnimationFrame` approach — no external library, works on all browsers including iOS Safari.
+- **Parallax Bands** — Two decorative `ParallaxBand` dividers on the home page: an ARMy motto band between the Hero and Leadership sections, and an Events CTA band before the Events grid.
+- **About Us Parallax** — The page banner and a mid-page "Meet the Team" divider both use the same parallax engine.
+- **Admin pages untouched** — Dashboard, HicomDashboard, and Login remain fully static for reliable data management.
+
+### 📱 Fully Responsive (Mobile-First)
+- **Fluid layouts** — All containers use `w-full` / `max-w-7xl mx-auto` with `px-4 sm:px-6` horizontal padding so content never bleeds to the screen edge.
+- **Stacking grids** — Multi-column layouts (event cards, form date fields, department cards) collapse to a single column on mobile via `grid-cols-1 sm:grid-cols-2`.
+- **Hamburger menu** — Mobile nav uses a slide-down dropdown; desktop nav shows inline links.
+- **Scrollable tables** — The Admin Duty Logs table is wrapped in `overflow-x-auto` with a 1280px min-width so mobile users swipe horizontally without breaking page layout.
+- **Responsive text** — Section headlines scale down gracefully: `text-2xl sm:text-3xl md:text-5xl` pattern used across parallax bands and page headers.
+- **Modals** — Use `w-full max-w-lg` with `p-3 sm:p-4` overlay padding, filling ~95% of the screen width on mobile.
 
 ### 🧭 Smart Navigation
 - **Logged-in users** see: Events (dashboard), About Us, Leadership, Admin.
@@ -102,6 +116,51 @@ firebase deploy
 
 ---
 
+## 🔥 Firebase Setup Requirements
+
+### Firestore Security Rules
+Paste the following into **Firebase Console → Firestore → Rules**:
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.createdBy;
+      allow delete: if request.auth != null;
+      match /participants/{participantId} {
+        allow read, create, delete: if request.auth != null;
+      }
+    }
+    match /duty_logs/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null;
+    }
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+                            && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+### Firestore Composite Index
+Required for the duplicate duty-log check query. Create in **Firebase Console → Firestore → Indexes → Composite**:
+
+| Collection | Field 1 | Field 2 |
+|---|---|---|
+| `duty_logs` | `userId` Ascending | `eventId` Ascending |
+
+Or open the app while logged in — Firebase will log an error in the browser console with a direct link to auto-create the index.
+
+---
+
 ## 🗂️ Firestore Collections
 
 | Collection | Purpose |
@@ -118,25 +177,26 @@ firebase deploy
 ```
 src/
 ├── components/
-│   ├── Login.jsx          # Auth (login, sign-up, forgot password)
-│   ├── Header.jsx         # Responsive navbar with auth-conditional links
-│   ├── Dashboard.jsx      # Member dashboard — events, registration, duty logging
-│   ├── HicomDashboard.jsx # Admin portal — duty tracker, verification, payment status
-│   ├── Hero.jsx
-│   ├── AboutUs.jsx
-│   ├── Events.jsx
+│   ├── Login.jsx           # Auth (login, sign-up, forgot password)
+│   ├── Header.jsx          # Responsive navbar with auth-conditional links
+│   ├── Hero.jsx            # Full-viewport parallax hero section
+│   ├── Parallax.jsx        # Reusable parallax hooks & ParallaxBand component
+│   ├── Dashboard.jsx       # Member dashboard — events, registration, duty logging
+│   ├── HicomDashboard.jsx  # Admin portal — duty tracker, verification, payment status
+│   ├── AboutUs.jsx         # About page with parallax banner
+│   ├── Leaders.jsx         # Leadership pyramid (desktop) / card grid (mobile)
+│   ├── Events.jsx          # Public Instagram event embeds
 │   ├── Activities.jsx
-│   ├── Leaders.jsx
 │   └── Footer.jsx
 ├── data/
 │   ├── events.js
 │   ├── leaders.js
 │   └── departments.js
-├── firebase.js            # Firebase app initialisation
+├── firebase.js             # Firebase app initialisation
 └── main.jsx
 ```
 
 ---
 
-**Developed by:** Muhammad Firdaus Zahin Bin Nurus Sham  
+**Developed by:** Muhammad Firdaus Zahin Bin Nurus Sham
 **Organisation:** Ambassador of Marketing Youth (ARMy) — Universiti Teknologi PETRONAS (2025/2026)
